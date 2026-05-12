@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: corba-pdf-server
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: CORBA_HOST
+        value: 127.0.0.1
+      - key: CORBA_PORT
+        value: 900
+    healthCheckPath: /api/health
+    autoDeploy: true

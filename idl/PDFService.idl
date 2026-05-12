@@ -1,0 +1,34 @@
+module PDFService {
+  exception PDFException { string message; };
+  typedef sequence<octet> PDFData;
+  typedef sequence<string> FileList;
+  struct PDFMetadata {
+    string title; string author; string subject;
+    string creator; string producer; string creationDate;
+    long pageCount; string pageSize;
+  };
+  struct TextStats {
+    string text; long charCount; long wordCount; long lineCount; long pageCount;
+  };
+  struct WatermarkOptions {
+    string text; float fontSize; float opacity; float rotation;
+  };
+  interface PDFProcessor {
+    PDFData mergePDF(in PDFData pdf1, in PDFData pdf2) raises(PDFException);
+    PDFData splitPDF(in PDFData pdf, in long startPage, in long endPage) raises(PDFException);
+    PDFData extractPages(in PDFData pdf, in FileList pageNumbers) raises(PDFException);
+    PDFData deletePages(in PDFData pdf, in FileList pageNumbers) raises(PDFException);
+    PDFData addPassword(in PDFData pdf, in string userPassword, in string ownerPassword) raises(PDFException);
+    FileList convertToImages(in PDFData pdf, in string format, in long dpi) raises(PDFException);
+    string extractText(in PDFData pdf) raises(PDFException);
+    PDFData createPDF(in string title, in string content) raises(PDFException);
+    PDFMetadata getMetadata(in PDFData pdf) raises(PDFException);
+    PDFData setMetadata(in PDFData pdf, in string title, in string author, in string subject) raises(PDFException);
+    TextStats extractTextWithStats(in PDFData pdf) raises(PDFException);
+    PDFData rotatePages(in PDFData pdf, in FileList pageNumbers, in long angle) raises(PDFException);
+    PDFData addWatermark(in PDFData pdf, in WatermarkOptions options) raises(PDFException);
+    PDFData compressPDF(in PDFData pdf) raises(PDFException);
+    PDFData removePassword(in PDFData pdf, in string password) raises(PDFException);
+    string ping() raises(PDFException);
+  };
+};

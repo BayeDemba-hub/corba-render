@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CORBA PDF Server 1.8</title>
+<style>
+:root{--bg:#0a0a0f;--surface:#111118;--surface2:#1a1a24;--surface3:#222232;--border:#2a2a3a;--border2:#3a3a50;--accent:#00d4ff;--accent2:#00ff9f;--accent3:#ff6b35;--accent4:#c77dff;--warn:#ffd60a;--text:#e8e8f0;--muted:#6b6b8a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+header{position:relative;z-index:10;border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px;background:rgba(10,10,15,.95);backdrop-filter:blur(10px);}
+.logo{font-family:monospace;font-size:13px;font-weight:700;color:var(--accent);letter-spacing:2px;}
+.logo span{color:var(--muted);font-weight:400;}
+.status-bar{margin-left:auto;display:flex;gap:16px;align-items:center;}
+.status-item{font-family:monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent2);box-shadow:0 0 6px var(--accent2);animation:blink 2s infinite;}
+.dot.warn{background:var(--warn);box-shadow:0 0 6px var(--warn);}
+.dot.err{background:var(--accent3);box-shadow:0 0 6px var(--accent3);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Config bar */
+.config-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 32px;display:flex;align-items:center;gap:12px;position:relative;z-index:9;}
+.config-bar label{font-family:monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;white-space:nowrap;}
+.config-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text);font-family:monospace;font-size:12px;outline:none;width:280px;transition:border-color .15s;}
+.config-input:focus{border-color:var(--accent);}
+.config-btn{background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 16px;font-family:monospace;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;}
+.config-btn:hover{background:#33ddff;}
+.config-hint{font-family:monospace;font-size:10px;color:var(--muted);}
+
+.layout{display:flex;height:calc(100vh - 100px);position:relative;z-index:1;}
+.sidebar{width:260px;min-width:260px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:20px 0;}
+.sidebar-label{font-family:monospace;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:0 20px;margin-bottom:6px;margin-top:14px;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:9px 20px;cursor:pointer;border-left:2px solid transparent;transition:all .15s;font-size:13px;font-weight:500;color:var(--muted);user-select:none;}
+.nav-item:hover{color:var(--text);background:var(--surface2);}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(0,212,255,.06);}
+.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0;}
+.nav-sub{font-family:monospace;font-size:9px;color:var(--muted);margin-left:auto;}
+.nav-bonus{font-family:monospace;font-size:8px;color:var(--warn);background:rgba(255,214,10,.1);border:1px solid rgba(255,214,10,.3);padding:1px 5px;border-radius:3px;margin-left:auto;}
+
+.main{flex:1;overflow-y:auto;padding:28px;}
+.panel{display:none;max-width:700px;animation:fadeUp .2s ease;}
+.panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.panel-title{font-family:monospace;font-size:20px;font-weight:700;color:var(--accent);margin-bottom:4px;}
+.badge-bonus{display:inline-block;background:rgba(255,214,10,.15);border:1px solid var(--warn);color:var(--warn);font-family:monospace;font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;margin-left:10px;vertical-align:middle;}
+.panel-desc{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6;}
+
+.upload-zone{border:1.5px dashed var(--border2);border-radius:10px;padding:26px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);position:relative;margin-bottom:12px;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(0,212,255,.04);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;}
+.upload-icon{font-size:22px;margin-bottom:5px;}
+.upload-label{font-family:monospace;font-size:11px;color:var(--muted);}
+.upload-label strong{color:var(--accent);}
+.file-name{font-family:monospace;font-size:11px;color:var(--accent2);margin-top:5px;}
+
+.form-row{margin-bottom:12px;}
+.form-label{font-family:monospace;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:5px;}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 13px;color:var(--text);font-family:monospace;font-size:13px;outline:none;transition:border-color .15s;}
+.form-input:focus{border-color:var(--accent);}
+.form-row-split{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border:none;border-radius:6px;cursor:pointer;font-family:monospace;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .15s;}
+.btn-primary{background:var(--accent);color:#000;}
+.btn-primary:hover{background:#33ddff;transform:translateY(-1px);}
+.btn-primary:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;transform:none;}
+
+.result-box{margin-top:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden;display:none;}
+.result-box.show{display:block;animation:fadeUp .2s ease;}
+.result-header{background:var(--surface2);padding:11px 15px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);font-family:monospace;font-size:11px;}
+.tag-ok{color:var(--accent2);}
+.tag-err{color:var(--accent3);}
+.result-body{padding:15px;}
+.download-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;background:rgba(0,255,159,.1);border:1px solid var(--accent2);border-radius:6px;color:var(--accent2);font-family:monospace;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;transition:all .15s;}
+.download-btn:hover{background:rgba(0,255,159,.2);}
+.text-result{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:13px;font-family:monospace;font-size:11px;line-height:1.6;color:var(--text);max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.meta-item{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 13px;}
+.meta-key{font-family:monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+.meta-val{font-family:monospace;font-size:12px;color:var(--accent2);}
+.stats-row{display:flex;gap:10px;margin-bottom:12px;}
+.stat-box{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:11px;text-align:center;}
+.stat-num{font-family:monospace;font-size:18px;font-weight:700;color:var(--accent);}
+.stat-lbl{font-family:monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.images-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:8px;}
+.images-grid a img{width:100%;border-radius:6px;border:1px solid var(--border);}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,212,255,.3);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-msg{color:var(--accent3);font-family:monospace;font-size:11px;padding:10px 13px;background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.3);border-radius:6px;white-space:pre-wrap;word-break:break-all;}
+
+/* No-server banner */
+.no-server-banner{background:rgba(255,214,10,.08);border:1px solid rgba(255,214,10,.3);border-radius:10px;padding:16px 20px;margin-bottom:20px;font-size:13px;line-height:1.7;display:none;}
+.no-server-banner.show{display:block;}
+.no-server-banner strong{color:var(--warn);}
+.no-server-banner code{background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;color:var(--accent);}
+
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;}
+.home-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:15px;cursor:pointer;transition:all .15s;}
+.home-card:hover{border-color:var(--accent);background:rgba(0,212,255,.04);transform:translateY(-2px);}
+.home-card.bonus{border-color:rgba(255,214,10,.2);}
+.home-card.bonus:hover{border-color:var(--warn);}
+.home-card-icon{font-size:18px;margin-bottom:5px;}
+.home-card-title{font-family:monospace;font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.home-card-desc{font-size:11px;color:var(--muted);line-height:1.4;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CORBA<span>/</span>PDF <span>— V1.8</span></div>
+  <div class="status-bar">
+    <div class="status-item"><span class="dot"></span>PDFBox 1.8</div>
+    <div class="status-item" id="server-status"><span class="dot warn"></span>Non connecté</div>
+    <div class="status-item">IIOP :1050</div>
+  </div>
+</header>
+
+<!-- Barre de configuration de l'URL du serveur -->
+<div class="config-bar">
+  <label>🔌 URL du serveur CORBA :</label>
+  <input class="config-input" type="text" id="api-url" placeholder="https://corba-render.onrender.com/api" value="https://corba-render.onrender.com/api"/>
+  <button class="config-btn" onclick="saveApiUrl()">✓ Connecter</button>
+  <span class="config-hint">Entrez l'URL de votre serveur CORBA bridge</span>
+</div>
+
+<div class="layout">
+<aside class="sidebar">
+  <div class="sidebar-label">Navigation</div>
+  <div class="nav-item active" onclick="showPanel('home')"><span class="nav-icon">⊞</span>Accueil</div>
+  <div class="sidebar-label">Services de base</div>
+  <div class="nav-item" onclick="showPanel('merge')"><span class="nav-icon">⊕</span>Fusion<span class="nav-sub">mergePDF</span></div>
+  <div class="nav-item" onclick="showPanel('split')"><span class="nav-icon">✂</span>Découpage<span class="nav-sub">splitPDF</span></div>
+  <div class="nav-item" onclick="showPanel('extract')"><span class="nav-icon">📄</span>Extraction pages<span class="nav-sub">extractPages</span></div>
+  <div class="nav-item" onclick="showPanel('delete')"><span class="nav-icon">🗑</span>Suppression<span class="nav-sub">deletePages</span></div>
+  <div class="nav-item" onclick="showPanel('password')"><span class="nav-icon">🔒</span>Mot de passe<span class="nav-sub">addPassword</span></div>
+  <div class="nav-item" onclick="showPanel('images')"><span class="nav-icon">🖼</span>PDF→Images<span class="nav-sub">convertToImages</span></div>
+  <div class="nav-item" onclick="showPanel('text')"><span class="nav-icon">📝</span>Extraire texte<span class="nav-sub">extractText</span></div>
+  <div class="nav-item" onclick="showPanel('create')"><span class="nav-icon">✚</span>Créer PDF<span class="nav-sub">createPDF</span></div>
+  <div class="sidebar-label">⭐ Bonus</div>
+  <div class="nav-item" onclick="showPanel('metadata')"><span class="nav-icon">ℹ</span>Métadonnées<span class="nav-bonus">BONUS</span></div>
+  <div class="nav-item" onclick="showPanel('set-metadata')"><span class="nav-icon">✏</span>Éditer métadonnées<span class="nav-bonus">BONUS</span></div>
+  <div class="nav-item" onclick="showPanel('textstats')"><span class="nav-icon">📊</span>Stats texte<span class="nav-bonus">BONUS</span></div>
+  <div class="nav-item" onclick="showPanel('rotate')"><span class="nav-icon">🔄</span>Rotation pages<span class="nav-bonus">BONUS</span></div>
+  <div class="nav-item" onclick="showPanel('watermark')"><span class="nav-icon">💧</span>Filigrane<span class="nav-bonus">BONUS</span></div>
+  <div class="nav-item" onclick="showPanel('compress')"><span class="nav-icon">📦</span>Compression<span class="nav-bonus">BONUS</span></div>
+  <div class="nav-item" onclick="showPanel('remove-password')"><span class="nav-icon">🔓</span>Retirer mot de passe<span class="nav-bonus">BONUS</span></div>
+</aside>
+
+<main class="main">
+
+<!-- HOME -->
+<div class="panel active" id="panel-home">
+  <div class="panel-title">CORBA PDF Server</div>
+  <div class="panel-desc">Interface web pour le serveur distribué CORBA v1.8 — Apache PDFBox 1.8 — <strong>15 services</strong> dont 7 bonus.</div>
+
+  <div class="no-server-banner show" id="setup-banner">
+    <strong>⚙ Configuration requise</strong><br/>
+    Cette interface se connecte à votre serveur CORBA local ou distant.<br/>
+    1. Lance ton serveur : <code>docker compose up</code><br/>
+    2. Entre l'URL dans la barre du haut (ex: <code>http://localhost:9090/api</code>)<br/>
+    3. Clique <strong>Connecter</strong> — le voyant vert confirme la connexion.
+  </div>
+
+  <div class="home-grid">
+    <div class="home-card" onclick="showPanel('merge')"><div class="home-card-icon">⊕</div><div class="home-card-title">Fusion de PDF</div><div class="home-card-desc">Combine deux PDF en un seul</div></div>
+    <div class="home-card" onclick="showPanel('split')"><div class="home-card-icon">✂</div><div class="home-card-title">Découpage</div><div class="home-card-desc">Extrait une plage de pages</div></div>
+    <div class="home-card" onclick="showPanel('extract')"><div class="home-card-icon">📄</div><div class="home-card-title">Extraction pages</div><div class="home-card-desc">Sélectionne des pages spécifiques</div></div>
+    <div class="home-card" onclick="showPanel('delete')"><div class="home-card-icon">🗑</div><div class="home-card-title">Suppression pages</div><div class="home-card-desc">Retire des pages d'un document</div></div>
+    <div class="home-card" onclick="showPanel('password')"><div class="home-card-icon">🔒</div><div class="home-card-title">Mot de passe</div><div class="home-card-desc">Chiffrement AES 128 bits</div></div>
+    <div class="home-card" onclick="showPanel('images')"><div class="home-card-icon">🖼</div><div class="home-card-title">PDF → Images</div><div class="home-card-desc">PNG ou JPEG par page</div></div>
+    <div class="home-card" onclick="showPanel('text')"><div class="home-card-icon">📝</div><div class="home-card-title">Extraire texte</div><div class="home-card-desc">Contenu textuel complet</div></div>
+    <div class="home-card" onclick="showPanel('create')"><div class="home-card-icon">✚</div><div class="home-card-title">Créer PDF</div><div class="home-card-desc">Génère un PDF depuis du texte</div></div>
+    <div class="home-card bonus" onclick="showPanel('metadata')"><div class="home-card-icon">ℹ</div><div class="home-card-title">Métadonnées ⭐</div><div class="home-card-desc">Titre, auteur, pages, taille</div></div>
+    <div class="home-card bonus" onclick="showPanel('set-metadata')"><div class="home-card-icon">✏</div><div class="home-card-title">Éditer métadonnées ⭐</div><div class="home-card-desc">Modifier titre, auteur, sujet</div></div>
+    <div class="home-card bonus" onclick="showPanel('textstats')"><div class="home-card-icon">📊</div><div class="home-card-title">Stats texte ⭐</div><div class="home-card-desc">Mots, lignes, caractères</div></div>
+    <div class="home-card bonus" onclick="showPanel('rotate')"><div class="home-card-icon">🔄</div><div class="home-card-title">Rotation pages ⭐</div><div class="home-card-desc">90°, 180°, 270° par page</div></div>
+    <div class="home-card bonus" onclick="showPanel('watermark')"><div class="home-card-icon">💧</div><div class="home-card-title">Filigrane ⭐</div><div class="home-card-desc">Texte en arrière-plan</div></div>
+    <div class="home-card bonus" onclick="showPanel('compress')"><div class="home-card-icon">📦</div><div class="home-card-title">Compression ⭐</div><div class="home-card-desc">Optimise la taille du fichier</div></div>
+    <div class="home-card bonus" onclick="showPanel('remove-password')"><div class="home-card-icon">🔓</div><div class="home-card-title">Retirer mot de passe ⭐</div><div class="home-card-desc">Déverrouille un PDF protégé</div></div>
+  </div>
+</div>
+
+<!-- FUSION -->
+<div class="panel" id="panel-merge">
+  <div class="panel-title">⊕ Fusion de PDF</div>
+  <div class="panel-desc">Charge deux fichiers PDF. Le serveur CORBA les fusionne via PDFBox 1.8.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'merge1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'merge1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>PDF N°1</strong> — glisser ou cliquer</div><div class="file-name" id="name-merge1"></div></div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'merge2')"><input type="file" accept=".pdf" onchange="fileSelected(this,'merge2')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>PDF N°2</strong> — glisser ou cliquer</div><div class="file-name" id="name-merge2"></div></div>
+  <button class="btn btn-primary" onclick="doMerge()"><span>⊕</span>Fusionner via CORBA</button>
+  <div class="result-box" id="result-merge"></div>
+</div>
+
+<!-- DÉCOUPAGE -->
+<div class="panel" id="panel-split">
+  <div class="panel-title">✂ Découpage de PDF</div>
+  <div class="panel-desc">Extrait une plage de pages consécutives d'un PDF.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'split1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'split1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-split1"></div></div>
+  <div class="form-row form-row-split">
+    <div><label class="form-label">Page de début</label><input class="form-input" type="number" id="split-start" value="1" min="1"/></div>
+    <div><label class="form-label">Page de fin</label><input class="form-input" type="number" id="split-end" value="2" min="1"/></div>
+  </div>
+  <button class="btn btn-primary" onclick="doSplit()"><span>✂</span>Découper via CORBA</button>
+  <div class="result-box" id="result-split"></div>
+</div>
+
+<!-- EXTRACTION PAGES -->
+<div class="panel" id="panel-extract">
+  <div class="panel-title">📄 Extraction de pages</div>
+  <div class="panel-desc">Sélectionne des pages spécifiques (ex: 1,3,5).</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'extract1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'extract1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-extract1"></div></div>
+  <div class="form-row"><label class="form-label">Numéros de pages (ex: 1,3,5)</label><input class="form-input" type="text" id="extract-pages" placeholder="1,3,5"/></div>
+  <button class="btn btn-primary" onclick="doExtract()"><span>📄</span>Extraire via CORBA</button>
+  <div class="result-box" id="result-extract"></div>
+</div>
+
+<!-- SUPPRESSION -->
+<div class="panel" id="panel-delete">
+  <div class="panel-title">🗑 Suppression de pages</div>
+  <div class="panel-desc">Supprime les pages indiquées et retourne le PDF restant.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'delete1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'delete1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-delete1"></div></div>
+  <div class="form-row"><label class="form-label">Pages à supprimer (ex: 2,4)</label><input class="form-input" type="text" id="delete-pages" placeholder="2,4"/></div>
+  <button class="btn btn-primary" onclick="doDelete()"><span>🗑</span>Supprimer via CORBA</button>
+  <div class="result-box" id="result-delete"></div>
+</div>
+
+<!-- MOT DE PASSE -->
+<div class="panel" id="panel-password">
+  <div class="panel-title">🔒 Protection par mot de passe</div>
+  <div class="panel-desc">Chiffre le PDF avec AES 128 bits via BouncyCastle.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'pass1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'pass1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-pass1"></div></div>
+  <div class="form-row form-row-split">
+    <div><label class="form-label">Mot de passe utilisateur</label><input class="form-input" type="password" id="pass-user" placeholder="user123"/></div>
+    <div><label class="form-label">Mot de passe propriétaire</label><input class="form-input" type="password" id="pass-owner" placeholder="admin456"/></div>
+  </div>
+  <button class="btn btn-primary" onclick="doPassword()"><span>🔒</span>Protéger via CORBA</button>
+  <div class="result-box" id="result-password"></div>
+</div>
+
+<!-- PDF → IMAGES -->
+<div class="panel" id="panel-images">
+  <div class="panel-title">🖼 PDF → Images</div>
+  <div class="panel-desc">Convertit chaque page du PDF en image PNG ou JPEG.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'img1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'img1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-img1"></div></div>
+  <div class="form-row form-row-split">
+    <div><label class="form-label">Format</label><select class="form-input" id="img-format"><option value="png">PNG</option><option value="jpeg">JPEG</option></select></div>
+    <div><label class="form-label">Résolution (DPI)</label><input class="form-input" type="number" id="img-dpi" value="150" min="72" max="300"/></div>
+  </div>
+  <button class="btn btn-primary" onclick="doImages()"><span>🖼</span>Convertir via CORBA</button>
+  <div class="result-box" id="result-images"></div>
+</div>
+
+<!-- EXTRAIRE TEXTE -->
+<div class="panel" id="panel-text">
+  <div class="panel-title">📝 Extraction de texte</div>
+  <div class="panel-desc">Extrait tout le contenu textuel via PDFTextStripper de PDFBox 1.8.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'txt1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'txt1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-txt1"></div></div>
+  <button class="btn btn-primary" onclick="doText()"><span>📝</span>Extraire via CORBA</button>
+  <div class="result-box" id="result-text"></div>
+</div>
+
+<!-- CRÉER PDF -->
+<div class="panel" id="panel-create">
+  <div class="panel-title">✚ Création de PDF</div>
+  <div class="panel-desc">Génère un nouveau PDF depuis un titre et un contenu texte.</div>
+  <div class="form-row"><label class="form-label">Titre</label><input class="form-input" type="text" id="create-title" placeholder="Mon rapport"/></div>
+  <div class="form-row"><label class="form-label">Contenu</label><textarea class="form-input" id="create-content" rows="7" placeholder="Contenu du document..."></textarea></div>
+  <button class="btn btn-primary" onclick="doCreate()"><span>✚</span>Créer via CORBA</button>
+  <div class="result-box" id="result-create"></div>
+</div>
+
+<!-- MÉTADONNÉES -->
+<div class="panel" id="panel-metadata">
+  <div class="panel-title">ℹ Métadonnées <span class="badge-bonus">BONUS</span></div>
+  <div class="panel-desc">Lit les propriétés du document : titre, auteur, nombre de pages, taille de page.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'meta1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'meta1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-meta1"></div></div>
+  <button class="btn btn-primary" onclick="doMetadata()"><span>ℹ</span>Lire métadonnées via CORBA</button>
+  <div class="result-box" id="result-metadata"></div>
+</div>
+
+<!-- ÉDITER MÉTADONNÉES -->
+<div class="panel" id="panel-set-metadata">
+  <div class="panel-title">✏ Éditer métadonnées <span class="badge-bonus">BONUS</span></div>
+  <div class="panel-desc">Modifie le titre, l'auteur et le sujet d'un document PDF.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'setmeta1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'setmeta1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-setmeta1"></div></div>
+  <div class="form-row"><label class="form-label">Nouveau titre</label><input class="form-input" type="text" id="setmeta-title" placeholder="Titre du document"/></div>
+  <div class="form-row form-row-split">
+    <div><label class="form-label">Auteur</label><input class="form-input" type="text" id="setmeta-author" placeholder="Nom de l'auteur"/></div>
+    <div><label class="form-label">Sujet</label><input class="form-input" type="text" id="setmeta-subject" placeholder="Sujet du document"/></div>
+  </div>
+  <button class="btn btn-primary" onclick="doSetMetadata()"><span>✏</span>Modifier via CORBA</button>
+  <div class="result-box" id="result-set-metadata"></div>
+</div>
+
+<!-- STATS TEXTE -->
+<div class="panel" id="panel-textstats">
+  <div class="panel-title">📊 Statistiques texte <span class="badge-bonus">BONUS</span></div>
+  <div class="panel-desc">Analyse le contenu textuel : mots, lignes, caractères et pages.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'stats1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'stats1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-stats1"></div></div>
+  <button class="btn btn-primary" onclick="doTextStats()"><span>📊</span>Analyser via CORBA</button>
+  <div class="result-box" id="result-textstats"></div>
+</div>
+
+<!-- ROTATION -->
+<div class="panel" id="panel-rotate">
+  <div class="panel-title">🔄 Rotation de pages <span class="badge-bonus">BONUS</span></div>
+  <div class="panel-desc">Fait pivoter les pages sélectionnées. Entrez "all" pour toutes les pages.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'rot1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'rot1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-rot1"></div></div>
+  <div class="form-row form-row-split">
+    <div><label class="form-label">Pages (ex: 1,2 ou all)</label><input class="form-input" type="text" id="rot-pages" placeholder="all"/></div>
+    <div><label class="form-label">Angle</label><select class="form-input" id="rot-angle"><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></div>
+  </div>
+  <button class="btn btn-primary" onclick="doRotate()"><span>🔄</span>Faire pivoter via CORBA</button>
+  <div class="result-box" id="result-rotate"></div>
+</div>
+
+<!-- FILIGRANE -->
+<div class="panel" id="panel-watermark">
+  <div class="panel-title">💧 Filigrane <span class="badge-bonus">BONUS</span></div>
+  <div class="panel-desc">Ajoute un texte en filigrane sur toutes les pages du document.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'wm1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'wm1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-wm1"></div></div>
+  <div class="form-row form-row-split">
+    <div><label class="form-label">Texte du filigrane</label><input class="form-input" type="text" id="wm-text" placeholder="CONFIDENTIEL"/></div>
+    <div><label class="form-label">Taille police</label><input class="form-input" type="number" id="wm-size" value="48" min="12" max="120"/></div>
+  </div>
+  <button class="btn btn-primary" onclick="doWatermark()"><span>💧</span>Ajouter filigrane via CORBA</button>
+  <div class="result-box" id="result-watermark"></div>
+</div>
+
+<!-- COMPRESSION -->
+<div class="panel" id="panel-compress">
+  <div class="panel-title">📦 Compression PDF <span class="badge-bonus">BONUS</span></div>
+  <div class="panel-desc">Optimise et compresse le fichier PDF pour réduire sa taille.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'comp1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'comp1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-comp1"></div></div>
+  <button class="btn btn-primary" onclick="doCompress()"><span>📦</span>Compresser via CORBA</button>
+  <div class="result-box" id="result-compress"></div>
+</div>
+
+<!-- RETIRER MOT DE PASSE -->
+<div class="panel" id="panel-remove-password">
+  <div class="panel-title">🔓 Retirer le mot de passe <span class="badge-bonus">BONUS</span></div>
+  <div class="panel-desc">Déverrouille un PDF protégé en fournissant le mot de passe actuel.</div>
+  <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'rmpwd1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'rmpwd1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF protégé</strong></div><div class="file-name" id="name-rmpwd1"></div></div>
+  <div class="form-row"><label class="form-label">Mot de passe actuel</label><input class="form-input" type="password" id="rmpwd-pass" placeholder="Mot de passe"/></div>
+  <button class="btn btn-primary" onclick="doRemovePassword()"><span>🔓</span>Déverrouiller via CORBA</button>
+  <div class="result-box" id="result-remove-password"></div>
+</div>
+
+</main>
+</div>
+
+<script>
+// ── URL API configurable ─────────────────────────────────
+let API = localStorage.getItem('corba_api_url') || 'https://corba-render.onrender.com/api';
+document.getElementById('api-url').value = API;
+
+function saveApiUrl() {
+  API = document.getElementById('api-url').value.trim().replace(/\/+$/, '');
+  localStorage.setItem('corba_api_url', API);
+  checkServer();
+}
+
+// ── Navigation ───────────────────────────────────────────
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(item => {
+    if (item.getAttribute('onclick') && item.getAttribute('onclick').includes("'" + id + "'"))
+      item.classList.add('active');
+  });
+}
+
+// ── Fichiers ─────────────────────────────────────────────
+const FILES = {};
+function fileSelected(input, key) {
+  if (input.files[0]) {
+    FILES[key] = input.files[0];
+    const el = document.getElementById('name-' + key);
+    if (el) el.textContent = '✓ ' + input.files[0].name + ' (' + formatSize(input.files[0].size) + ')';
+  }
+}
+function drag(e, zone) { e.preventDefault(); zone.classList.add('drag'); }
+function undrag(zone) { zone.classList.remove('drag'); }
+function drop(e, key) {
+  e.preventDefault(); undrag(e.currentTarget);
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.pdf')) {
+    FILES[key] = file;
+    const el = document.getElementById('name-' + key);
+    if (el) el.textContent = '✓ ' + file.name + ' (' + formatSize(file.size) + ')';
+  }
+}
+function formatSize(b) {
+  if (b < 1024) return b + ' o';
+  if (b < 1048576) return (b / 1024).toFixed(1) + ' Ko';
+  return (b / 1048576).toFixed(1) + ' Mo';
+}
+
+// ── UI helpers ───────────────────────────────────────────
+function setLoading(btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Traitement CORBA...'; }
+function resetBtn(btn, orig) { btn.disabled = false; btn.innerHTML = orig; }
+function showResult(id, content) {
+  const box = document.getElementById('result-' + id);
+  box.innerHTML = content; box.classList.add('show');
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function showError(id, msg) {
+  showResult(id, `<div class="result-header"><span class="tag-err">✗ ERREUR</span></div><div class="result-body"><div class="err-msg">${msg}</div></div>`);
+}
+function showDownload(id, blob, filename) {
+  const url = URL.createObjectURL(blob);
+  showResult(id, `<div class="result-header"><span class="tag-ok">✓ SUCCÈS</span> — ${filename}</div>
+    <div class="result-body"><a class="download-btn" href="${url}" download="${filename}">⬇ Télécharger ${filename}</a></div>`);
+}
+function escHtml(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// ── API calls ────────────────────────────────────────────
+async function callApi(endpoint, formData) {
+  const res = await fetch(API + endpoint, { method: 'POST', body: formData });
+  if (!res.ok) { const err = await res.text(); throw new Error(err || 'Erreur HTTP ' + res.status); }
+  return res;
+}
+function requireFile(key, name) {
+  if (!FILES[key]) throw new Error('Charge le fichier ' + name + ' d\'abord.');
+  return FILES[key];
+}
+
+// ── Services ─────────────────────────────────────────────
+async function doMerge() {
+  const btn = document.querySelector('#panel-merge .btn'); const orig = btn.innerHTML;
+  try { requireFile('merge1','PDF N°1'); requireFile('merge2','PDF N°2'); setLoading(btn);
+    const fd = new FormData(); fd.append('pdf1', FILES.merge1); fd.append('pdf2', FILES.merge2);
+    showDownload('merge', await (await callApi('/merge', fd)).blob(), 'fusionne.pdf');
+  } catch(e) { showError('merge', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doSplit() {
+  const btn = document.querySelector('#panel-split .btn'); const orig = btn.innerHTML;
+  try { requireFile('split1','PDF'); setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.split1);
+    fd.append('start', document.getElementById('split-start').value);
+    fd.append('end', document.getElementById('split-end').value);
+    showDownload('split', await (await callApi('/split', fd)).blob(), 'decoupe.pdf');
+  } catch(e) { showError('split', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doExtract() {
+  const btn = document.querySelector('#panel-extract .btn'); const orig = btn.innerHTML;
+  try { requireFile('extract1','PDF');
+    const pages = document.getElementById('extract-pages').value.trim();
+    if (!pages) throw new Error('Indique les numéros de pages');
+    setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.extract1); fd.append('pages', pages);
+    showDownload('extract', await (await callApi('/extract-pages', fd)).blob(), 'extraites.pdf');
+  } catch(e) { showError('extract', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doDelete() {
+  const btn = document.querySelector('#panel-delete .btn'); const orig = btn.innerHTML;
+  try { requireFile('delete1','PDF');
+    const pages = document.getElementById('delete-pages').value.trim();
+    if (!pages) throw new Error('Indique les pages à supprimer');
+    setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.delete1); fd.append('pages', pages);
+    showDownload('delete', await (await callApi('/delete-pages', fd)).blob(), 'supprimees.pdf');
+  } catch(e) { showError('delete', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doPassword() {
+  const btn = document.querySelector('#panel-password .btn'); const orig = btn.innerHTML;
+  try { requireFile('pass1','PDF'); setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.pass1);
+    fd.append('userPassword', document.getElementById('pass-user').value);
+    fd.append('ownerPassword', document.getElementById('pass-owner').value);
+    showDownload('password', await (await callApi('/add-password', fd)).blob(), 'protege.pdf');
+  } catch(e) { showError('password', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doImages() {
+  const btn = document.querySelector('#panel-images .btn'); const orig = btn.innerHTML;
+  try { requireFile('img1','PDF'); setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.img1);
+    fd.append('format', document.getElementById('img-format').value);
+    fd.append('dpi', document.getElementById('img-dpi').value);
+    const data = await (await callApi('/convert-images', fd)).json();
+    const imgs = data.images.map(url => `<a href="${API.replace('/api','')}${url}" target="_blank"><img src="${API.replace('/api','')}${url}" alt="page"/></a>`).join('');
+    showResult('images', `<div class="result-header"><span class="tag-ok">✓ ${data.images.length} image(s)</span></div><div class="result-body"><div class="images-grid">${imgs}</div></div>`);
+  } catch(e) { showError('images', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doText() {
+  const btn = document.querySelector('#panel-text .btn'); const orig = btn.innerHTML;
+  try { requireFile('txt1','PDF'); setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.txt1);
+    const data = await (await callApi('/extract-text', fd)).json();
+    const txt = data.text || '(aucun texte)';
+    showResult('text', `<div class="result-header"><span class="tag-ok">✓ ${txt.length} caractères</span></div>
+      <div class="result-body"><div class="text-result">${escHtml(txt)}</div><br/>
+      <a class="download-btn" href="data:text/plain;charset=utf-8,${encodeURIComponent(txt)}" download="texte.txt">⬇ Télécharger .txt</a></div>`);
+  } catch(e) { showError('text', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doCreate() {
+  const btn = document.querySelector('#panel-create .btn'); const orig = btn.innerHTML;
+  try {
+    const title = document.getElementById('create-title').value.trim();
+    const content = document.getElementById('create-content').value.trim();
+    if (!title || !content) throw new Error('Remplis le titre et le contenu');
+    setLoading(btn);
+    const fd = new FormData(); fd.append('title', title); fd.append('content', content);
+    showDownload('create', await (await callApi('/create', fd)).blob(), title.replace(/[^a-z0-9]/gi,'_') + '.pdf');
+  } catch(e) { showError('create', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doMetadata() {
+  const btn = document.querySelector('#panel-metadata .btn'); const orig = btn.innerHTML;
+  try { requireFile('meta1','PDF'); setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.meta1);
+    const m = await (await callApi('/metadata', fd)).json();
+    showResult('metadata', `<div class="result-header"><span class="tag-ok">✓ Métadonnées lues</span></div>
+      <div class="result-body"><div class="meta-grid">
+        <div class="meta-item"><div class="meta-key">Titre</div><div class="meta-val">${m.title||'—'}</div></div>
+        <div class="meta-item"><div class="meta-key">Auteur</div><div class="meta-val">${m.author||'—'}</div></div>
+        <div class="meta-item"><div class="meta-key">Sujet</div><div class="meta-val">${m.subject||'—'}</div></div>
+        <div class="meta-item"><div class="meta-key">Créateur</div><div class="meta-val">${m.creator||'—'}</div></div>
+        <div class="meta-item"><div class="meta-key">Pages</div><div class="meta-val" style="color:var(--accent);font-size:18px;">${m.pageCount}</div></div>
+        <div class="meta-item"><div class="meta-key">Taille page</div><div class="meta-val">${m.pageSize}</div></div>
+        <div class="meta-item" style="grid-column:1/-1"><div class="meta-key">Producteur</div><div class="meta-val">${m.producer||'—'}</div></div>
+      </div></div>`);
+  } catch(e) { showError('metadata', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doSetMetadata() {
+  const btn = document.querySelector('#panel-set-metadata .btn'); const orig = btn.innerHTML;
+  try { requireFile('setmeta1','PDF'); setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.setmeta1);
+    fd.append('title', document.getElementById('setmeta-title').value);
+    fd.append('author', document.getElementById('setmeta-author').value);
+    fd.append('subject', document.getElementById('setmeta-subject').value);
+    showDownload('set-metadata', await (await callApi('/set-metadata', fd)).blob(), 'metadata_modifie.pdf');
+  } catch(e) { showError('set-metadata', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doTextStats() {
+  const btn = document.querySelector('#panel-textstats .btn'); const orig = btn.innerHTML;
+  try { requireFile('stats1','PDF'); setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.stats1);
+    const s = await (await callApi('/text-stats', fd)).json();
+    showResult('textstats', `<div class="result-header"><span class="tag-ok">✓ Analyse terminée</span></div>
+      <div class="result-body">
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-num">${s.pageCount}</div><div class="stat-lbl">Pages</div></div>
+          <div class="stat-box"><div class="stat-num">${s.wordCount}</div><div class="stat-lbl">Mots</div></div>
+          <div class="stat-box"><div class="stat-num">${s.lineCount}</div><div class="stat-lbl">Lignes</div></div>
+          <div class="stat-box"><div class="stat-num">${s.charCount}</div><div class="stat-lbl">Caractères</div></div>
+        </div>
+        <div class="text-result">${escHtml(s.text.substring(0,500))}${s.text.length>500?'\n...(tronqué)':''}</div><br/>
+        <a class="download-btn" href="data:text/plain;charset=utf-8,${encodeURIComponent(s.text)}" download="texte.txt">⬇ Télécharger le texte</a>
+      </div>`);
+  } catch(e) { showError('textstats', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doRotate() {
+  const btn = document.querySelector('#panel-rotate .btn'); const orig = btn.innerHTML;
+  try { requireFile('rot1','PDF'); setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.rot1);
+    fd.append('pages', document.getElementById('rot-pages').value || 'all');
+    fd.append('angle', document.getElementById('rot-angle').value);
+    showDownload('rotate', await (await callApi('/rotate', fd)).blob(), 'tourne.pdf');
+  } catch(e) { showError('rotate', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doWatermark() {
+  const btn = document.querySelector('#panel-watermark .btn'); const orig = btn.innerHTML;
+  try { requireFile('wm1','PDF');
+    const txt = document.getElementById('wm-text').value.trim();
+    if (!txt) throw new Error('Entre le texte du filigrane');
+    setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.wm1);
+    fd.append('text', txt); fd.append('fontSize', document.getElementById('wm-size').value);
+    showDownload('watermark', await (await callApi('/watermark', fd)).blob(), 'watermark.pdf');
+  } catch(e) { showError('watermark', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doCompress() {
+  const btn = document.querySelector('#panel-compress .btn'); const orig = btn.innerHTML;
+  try { requireFile('comp1','PDF'); setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.comp1);
+    const blob = await (await callApi('/compress', fd)).blob();
+    const pct = Math.round((1 - blob.size / FILES.comp1.size) * 100);
+    const url = URL.createObjectURL(blob);
+    showResult('compress', `<div class="result-header"><span class="tag-ok">✓ Compression terminée</span></div>
+      <div class="result-body">
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-num">${formatSize(FILES.comp1.size)}</div><div class="stat-lbl">Original</div></div>
+          <div class="stat-box"><div class="stat-num">${formatSize(blob.size)}</div><div class="stat-lbl">Compressé</div></div>
+          <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">${pct>0?'-'+pct+'%':'~0%'}</div><div class="stat-lbl">Réduction</div></div>
+        </div>
+        <a class="download-btn" href="${url}" download="compresse.pdf">⬇ Télécharger</a>
+      </div>`);
+  } catch(e) { showError('compress', e.message); } finally { resetBtn(btn, orig); }
+}
+async function doRemovePassword() {
+  const btn = document.querySelector('#panel-remove-password .btn'); const orig = btn.innerHTML;
+  try { requireFile('rmpwd1','PDF'); setLoading(btn);
+    const fd = new FormData(); fd.append('pdf', FILES.rmpwd1);
+    fd.append('password', document.getElementById('rmpwd-pass').value);
+    showDownload('remove-password', await (await callApi('/remove-password', fd)).blob(), 'deverrouille.pdf');
+  } catch(e) { showError('remove-password', e.message); } finally { resetBtn(btn, orig); }
+}
+
+// ── Health check ─────────────────────────────────────────
+async function checkServer() {
+  const el = document.getElementById('server-status');
+  try {
+    const r = await fetch(API + '/health', { signal: AbortSignal.timeout(4000) });
+    const data = await r.json();
+    if (r.ok) {
+      el.innerHTML = '<span class="dot"></span>Serveur connecté';
+      document.getElementById('setup-banner').classList.remove('show');
+    } else {
+      el.innerHTML = '<span class="dot warn"></span>Serveur erreur';
+    }
+  } catch {
+    el.innerHTML = '<span class="dot err"></span>Non connecté';
+    document.getElementById('setup-banner').classList.add('show');
+  }
+}
+checkServer();
+setInterval(checkServer, 15000);
+</script>
+</body>
+</html>
