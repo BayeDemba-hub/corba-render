@@ -479,7 +479,7 @@ async function doImages() {
     fd.append('format', document.getElementById('img-format').value);
     fd.append('dpi', document.getElementById('img-dpi').value);
     const data = await (await callApi('/convert-images', fd)).json();
-    const imgs = data.images.map(url => `<a href="${API.replace('/api','')}${url}" target="_blank"><img src="${API.replace('/api','')}${url}" alt="page"/></a>`).join('');
+    const imgs = data.images.map((b64, i) => `<a href="${b64}" download="page_${i+1}.png"><img src="${b64}" alt="page ${i+1}" style="width:100%;border-radius:6px;border:1px solid #2a2a3a;"/></a>`).join("");
     showResult('images', `<div class="result-header"><span class="tag-ok">✓ ${data.images.length} image(s)</span></div><div class="result-body"><div class="images-grid">${imgs}</div></div>`);
   } catch(e) { showError('images', e.message); } finally { resetBtn(btn, orig); }
 }
