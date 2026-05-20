@@ -12,7 +12,7 @@ CORBA_PORT="900"
 
 # ── 1. Lancer orbd (NameService CORBA) ──
 echo "[1/3] Démarrage orbd (NameService)..."
-orbd -ORBInitialPort $CORBA_PORT \
+corbd -ORBInitialPort $CORBA_PORT \
      -ORBInitialHost 0.0.0.0 \
      -defaultdb /tmp/orbd_db &
 ORBD_PID=$!
