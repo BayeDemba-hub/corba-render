@@ -62,7 +62,7 @@ echo "  CORBA orbd  : $CORBA_HOST:$CORBA_PORT"
 echo "========================================="
 # Ping automatique toutes les 14 minutes pour garder Render éveillé
 while true; do
-    sleep 840
+    sleep 60
     curl -s https://corba-render.onrender.com/api/health > /dev/null 2>&1
     echo "[KEEP-ALIVE] ping $(date)"
 done &
