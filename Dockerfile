@@ -25,8 +25,9 @@ RUN cd /build/server && mvn clean package -DskipTests -q \
 # Build bridge Tomcat
 COPY bridge/pom.xml /build/bridge/pom.xml
 COPY bridge/src /build/bridge/src
-RUN cd /build/bridge && mvn clean package -DskipTests -q
-
+RUN cd /build/bridge && mvn clean package -DskipTests -q \
+    -Dmaven.wagon.http.ssl.insecure=true \
+    -Dmaven.wagon.http.ssl.allowall=true
 # ── Étape 2 : Image runtime ────────────────────────────
 FROM tomcat:8.5-jdk8-openjdk-slim
 
