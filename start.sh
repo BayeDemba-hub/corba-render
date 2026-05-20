@@ -60,7 +60,12 @@ echo "  Tous les services démarrés !"
 echo "  Bridge REST : http://0.0.0.0:$PORT"
 echo "  CORBA orbd  : $CORBA_HOST:$CORBA_PORT"
 echo "========================================="
-
+# Ping automatique toutes les 14 minutes pour garder Render éveillé
+while true; do
+    sleep 840
+    curl -s https://corba-render.onrender.com/api/health > /dev/null 2>&1
+    echo "[KEEP-ALIVE] ping $(date)"
+done &
 # Garder le conteneur vivant et surveiller les processus
 wait_for_death() {
     while true; do
