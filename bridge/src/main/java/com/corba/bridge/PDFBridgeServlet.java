@@ -112,26 +112,16 @@ private void handleConvertImages(HttpServletRequest req, HttpServletResponse res
     byte[] pdf = partBytes(req, "pdf");
     String format = req.getParameter("format");
     int dpi = Integer.parseInt(req.getParameter("dpi"));
-    
-    // Appel CORBA → retourne les chemins des images sur le serveur
-    String[] paths = pdfService.convertToImages(pdf, format, dpi);
-    
-    // Lire chaque image et la convertir en base64
+    String[] base64images = pdfService.convertToImages(pdf, format, dpi);
     StringBuilder json = new StringBuilder("{\"images\":[");
-    for (int i = 0; i < paths.length; i++) {
-        java.io.File file = new java.io.File(paths[i]);
-        byte[] imageBytes = java.nio.file.Files.readAllBytes(file.toPath());
-        String base64 = java.util.Base64.getEncoder().encodeToString(imageBytes);
-        String mime = paths[i].endsWith(".jpeg") ? "image/jpeg" : "image/png";
-        json.append("\"data:").append(mime).append(";base64,").append(base64).append("\"");
-        if (i < paths.length - 1) json.append(",");
+    for (int i = 0; i < base64images.length; i++) {
+        json.append("\"").append(base64images[i]).append("\"");
+        if (i < base64images.length - 1) json.append(",");
     }
     json.append("]}");
-    
     res.setContentType("application/json;charset=UTF-8");
     res.getWriter().write(json.toString());
 }
-    }
     private void handleExtractText(HttpServletRequest q, HttpServletResponse r) throws Exception {
         String text = pdfService.extractText(partBytes(q,"pdf"));
         String esc = text.replace("\\","\\\\").replace("\"","\\\"")
