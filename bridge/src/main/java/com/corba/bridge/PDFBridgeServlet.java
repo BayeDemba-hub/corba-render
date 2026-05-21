@@ -108,12 +108,10 @@ public class PDFBridgeServlet extends HttpServlet {
         sendPdf(r, pdfService.addPassword(partBytes(q,"pdf"),
             q.getParameter("userPassword"), q.getParameter("ownerPassword")), "protege.pdf");
     }
-
 private void handleConvertImages(HttpServletRequest req, HttpServletResponse res) throws Exception {
     byte[] pdf = partBytes(req, "pdf");
     String format = req.getParameter("format");
-    // Forcer DPI bas pour Render (plan gratuit = CPU limité)
-    int dpi = 36;
+    int dpi = Integer.parseInt(req.getParameter("dpi"));
     String[] base64images = pdfService.convertToImages(pdf, format, dpi);
     StringBuilder json = new StringBuilder("{\"images\":[");
     for (int i = 0; i < base64images.length; i++) {
