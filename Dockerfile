@@ -35,7 +35,11 @@ WORKDIR /app
 
 # Installer les outils nécessaires
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    procps curl && \
+    procps curl \
+    fontconfig \
+    fonts-dejavu-core \
+    libfontconfig1 && \
+    fc-cache -fv && \
     rm -rf /var/lib/apt/lists/*
 
 # Copier le JAR du serveur CORBA
