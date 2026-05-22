@@ -1,4 +1,12 @@
-cat > ~/corba-render/start.sh << 'EOF'
+#!/bin/bash
+
+echo "========================================="
+echo "  CORBA PDF Server 1.8 — Render Startup"
+echo "========================================="
+
+PORT=${PORT:-8080}
+CORBA_HOST="127.0.0.1"
+CORBA_PORT="900"
 #!/bin/bash
 
 echo "========================================="
