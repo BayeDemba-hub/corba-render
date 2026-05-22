@@ -63,4 +63,4 @@ RUN sed -i 's/\r$//' /app/start.sh && chmod +x /app/start.sh
 # Port exposé (Render utilise la variable PORT)
 EXPOSE 8080
 
-CMD ["/app/start.sh"]
+CMD ["sh", "/app/start.sh"]
