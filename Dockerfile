@@ -40,7 +40,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-dejavu-core \
     libfontconfig1 && \
     fc-cache -fv && \
-    rm -rf /var/lib/apt/lists/*
 
 # Copier le JAR du serveur CORBA
 COPY --from=builder \
