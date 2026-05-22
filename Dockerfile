@@ -58,7 +58,7 @@ RUN mkdir -p /tmp/corba_pdf_output /tmp/orbd_db
 
 # Script de démarrage — lance orbd + serveur CORBA + Tomcat
 COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+RUN sed -i 's/\r$//' /app/start.sh && chmod +x /app/start.sh
 
 # Port exposé (Render utilise la variable PORT)
 EXPOSE 8080
