@@ -137,7 +137,7 @@ header{position:relative;z-index:10;border-bottom:1px solid var(--border);paddin
   <div class="nav-item" onclick="showPanel('images')"><span class="nav-icon">🖼</span>PDF→Images<span class="nav-sub">convertToImages</span></div>
   <div class="nav-item" onclick="showPanel('text')"><span class="nav-icon">📝</span>Extraire texte<span class="nav-sub">extractText</span></div>
   <div class="nav-item" onclick="showPanel('create')"><span class="nav-icon">✚</span>Créer PDF<span class="nav-sub">createPDF</span></div>
-  <div class="sidebar-label">⭐ Bonus</div>
+  <div class="sidebar-label"> Bonus</div>
   <div class="nav-item" onclick="showPanel('metadata')"><span class="nav-icon">ℹ</span>Métadonnées<span class="nav-bonus">BONUS</span></div>
   <div class="nav-item" onclick="showPanel('set-metadata')"><span class="nav-icon">✏</span>Éditer métadonnées<span class="nav-bonus">BONUS</span></div>
   <div class="nav-item" onclick="showPanel('textstats')"><span class="nav-icon">📊</span>Stats texte<span class="nav-bonus">BONUS</span></div>
@@ -280,7 +280,7 @@ header{position:relative;z-index:10;border-bottom:1px solid var(--border);paddin
 
 <!-- ÉDITER MÉTADONNÉES -->
 <div class="panel" id="panel-set-metadata">
-  <div class="panel-title">✏ Éditer métadonnées <span class="badge-bonus">BONUS</span></div>
+  <div class="panel-title">✏ Éditer métadonnées </div>
   <div class="panel-desc">Modifie le titre, l'auteur et le sujet d'un document PDF.</div>
   <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'setmeta1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'setmeta1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-setmeta1"></div></div>
   <div class="form-row"><label class="form-label">Nouveau titre</label><input class="form-input" type="text" id="setmeta-title" placeholder="Titre du document"/></div>
@@ -294,7 +294,7 @@ header{position:relative;z-index:10;border-bottom:1px solid var(--border);paddin
 
 <!-- STATS TEXTE -->
 <div class="panel" id="panel-textstats">
-  <div class="panel-title">📊 Statistiques texte <span class="badge-bonus">BONUS</span></div>
+  <div class="panel-title">📊 Statistiques texte </div>
   <div class="panel-desc">Analyse le contenu textuel : mots, lignes, caractères et pages.</div>
   <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'stats1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'stats1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-stats1"></div></div>
   <button class="btn btn-primary" onclick="doTextStats()"><span>📊</span>Analyser via CORBA</button>
