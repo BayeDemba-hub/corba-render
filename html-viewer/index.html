@@ -240,13 +240,13 @@ header{position:relative;z-index:10;border-bottom:1px solid var(--border);paddin
 <!-- PDF → IMAGES -->
 <div class="panel" id="panel-images">
   <div class="panel-title">🖼 PDF → Images</div>
-  <div class="panel-desc">Convertit chaque page du PDF en image PNG ou JPEG.</div>
+  <div class="panel-desc">Convertit chaque page du PDF en image PNG directement dans le navigateur.</div>
   <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'img1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'img1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-img1"></div></div>
   <div class="form-row form-row-split">
     <div><label class="form-label">Format</label><select class="form-input" id="img-format"><option value="png">PNG</option><option value="jpeg">JPEG</option></select></div>
     <div><label class="form-label">Résolution (DPI)</label><input class="form-input" type="number" id="img-dpi" value="150" min="72" max="300"/></div>
   </div>
-  <button class="btn btn-primary" onclick="doImages()"><span>🖼</span>Convertir via CORBA</button>
+  <button class="btn btn-primary" onclick="doImages()"><span>🖼</span>Convertir (navigateur)</button>
   <div class="result-box" id="result-images"></div>
 </div>
 
@@ -329,7 +329,7 @@ header{position:relative;z-index:10;border-bottom:1px solid var(--border);paddin
 
 <!-- COMPRESSION -->
 <div class="panel" id="panel-compress">
-  <div class="panel-title">📦 Compression PDF <span class="badge-bonus">BONUS</span></div>
+  <div class="panel-title">📦 Compression PDF <span class="badge-bonus"></span></div>
   <div class="panel-desc">Optimise et compresse le fichier PDF pour réduire sa taille.</div>
   <div class="upload-zone" ondragover="drag(event,this)" ondragleave="undrag(this)" ondrop="drop(event,'comp1')"><input type="file" accept=".pdf" onchange="fileSelected(this,'comp1')"/><div class="upload-icon">📄</div><div class="upload-label"><strong>Fichier PDF</strong></div><div class="file-name" id="name-comp1"></div></div>
   <button class="btn btn-primary" onclick="doCompress()"><span>📦</span>Compresser via CORBA</button>
@@ -472,15 +472,50 @@ async function doPassword() {
     showDownload('password', await (await callApi('/add-password', fd)).blob(), 'protege.pdf');
   } catch(e) { showError('password', e.message); } finally { resetBtn(btn, orig); }
 }
-async function doImages() {
+
+  async function doImages() {
   const btn = document.querySelector('#panel-images .btn'); const orig = btn.innerHTML;
-  try { requireFile('img1','PDF'); setLoading(btn);
-    const fd = new FormData(); fd.append('pdf', FILES.img1);
-    fd.append('format', document.getElementById('img-format').value);
-    fd.append('dpi', document.getElementById('img-dpi').value);
-    const data = await (await callApi('/convert-images', fd)).json();
-    const imgs = data.images.map((b64, i) => `<a href="${b64}" download="page_${i+1}.png"><img src="${b64}" alt="page ${i+1}" style="width:100%;border-radius:6px;border:1px solid #2a2a3a;"/></a>`).join("");
-    showResult('images', `<div class="result-header"><span class="tag-ok">✓ ${data.images.length} image(s)</span></div><div class="result-body"><div class="images-grid">${imgs}</div></div>`);
+  try {
+    requireFile('img1','PDF'); setLoading(btn);
+    const format = document.getElementById('img-format').value;
+    const dpi = parseInt(document.getElementById('img-dpi').value) || 150;
+    const scale = dpi / 72;
+
+    // Charger PDF.js depuis CDN
+    if (!window.pdfjsLib) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.onload = resolve; script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    // Lire le fichier PDF
+    const arrayBuffer = await FILES.img1.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const imgs = [];
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+      const b64 = canvas.toDataURL(mimeType, 0.92);
+      imgs.push(`<a href="${b64}" download="page_${i}.${format}">
+        <img src="${b64}" alt="page ${i}" style="width:100%;border-radius:6px;border:1px solid #2a2a3a;"/>
+      </a>`);
+    }
+
+    showResult('images',
+      `<div class="result-header"><span class="tag-ok">✓ ${imgs.length} image(s) — converti dans le navigateur</span></div>
+       <div class="result-body"><div class="images-grid">${imgs.join('')}</div></div>`);
+
   } catch(e) { showError('images', e.message); } finally { resetBtn(btn, orig); }
 }
 async function doText() {
