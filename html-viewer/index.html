@@ -113,46 +113,32 @@ header{position:relative;z-index:10;border-bottom:1px solid var(--border);paddin
 
 
 
-// ── Changement de thème ─────────────────────────────
-const themes = [
-  {
-    bg:"#0a0a0f",
-    surface:"#111118",
-    accent:"#00d4ff",
-    text:"#e8e8f0"
-  },
-  {
-    bg:"#111827",
-    surface:"#1f2937",
-    accent:"#22c55e",
-    text:"#f9fafb"
-  },
-  {
-    bg:"#1e1b4b",
-    surface:"#312e81",
-    accent:"#f472b6",
-    text:"#ffffff"
-  },
-  {
-    bg:"#172554",
-    surface:"#1e3a8a",
-    accent:"#facc15",
-    text:"#f8fafc"
-  }
+
+<button id="themeToggle">Changer couleur</button>
+
+<script>
+const couleurs = [
+  { bg: "#0a0a0f", text: "#00e5ff" },
+  { bg: "#111827", text: "#22c55e" },
+  { bg: "#1e1b4b", text: "#f472b6" },
+  { bg: "#172554", text: "#facc15" }
 ];
 
-let currentTheme = 0;
+let index = 0;
 
 document.getElementById("themeToggle").addEventListener("click", () => {
-  currentTheme = (currentTheme + 1) % themes.length;
+  index = (index + 1) % couleurs.length;
 
-  const t = themes[currentTheme];
+  document.body.style.backgroundColor = couleurs[index].bg;
+  document.body.style.color = couleurs[index].text;
 
-  document.documentElement.style.setProperty('--bg', t.bg);
-  document.documentElement.style.setProperty('--surface', t.surface);
-  document.documentElement.style.setProperty('--accent', t.accent);
-  document.documentElement.style.setProperty('--text', t.text);
+  document.querySelectorAll("button").forEach(btn => {
+    btn.style.backgroundColor = couleurs[index].text;
+    btn.style.color = couleurs[index].bg;
+  });
 });
+</script>
+    
     
 
     
