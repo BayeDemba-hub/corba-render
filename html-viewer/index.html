@@ -110,6 +110,52 @@ header{position:relative;z-index:10;border-bottom:1px solid var(--border);paddin
 <header>
   <div class="logo">CORBA<span>/</span>PDF <span>— V1.8</span></div>
   <div class="status-bar">
+
+
+
+// ── Changement de thème ─────────────────────────────
+const themes = [
+  {
+    bg:"#0a0a0f",
+    surface:"#111118",
+    accent:"#00d4ff",
+    text:"#e8e8f0"
+  },
+  {
+    bg:"#111827",
+    surface:"#1f2937",
+    accent:"#22c55e",
+    text:"#f9fafb"
+  },
+  {
+    bg:"#1e1b4b",
+    surface:"#312e81",
+    accent:"#f472b6",
+    text:"#ffffff"
+  },
+  {
+    bg:"#172554",
+    surface:"#1e3a8a",
+    accent:"#facc15",
+    text:"#f8fafc"
+  }
+];
+
+let currentTheme = 0;
+
+document.getElementById("themeToggle").addEventListener("click", () => {
+  currentTheme = (currentTheme + 1) % themes.length;
+
+  const t = themes[currentTheme];
+
+  document.documentElement.style.setProperty('--bg', t.bg);
+  document.documentElement.style.setProperty('--surface', t.surface);
+  document.documentElement.style.setProperty('--accent', t.accent);
+  document.documentElement.style.setProperty('--text', t.text);
+});
+    
+
+    
     <div class="status-item"><span class="dot"></span>PDFBox 1.8</div>
     <div class="status-item" id="server-status"><span class="dot warn"></span>Non connecté</div>
     <div class="status-item">IIOP :1050</div>
